@@ -26,7 +26,11 @@ API_AUTHORIZATION_ENDPOINT = (
     'response_type=code' + # requesting an Authorization Code Grant type
     '&client_id={}' + 
     '&redirect_uri={}' + 
-    '&scope={}').format(
+    '&scope={}' +
+
+    # access_type=offline means you're requesting offline access to this resource.
+    #  Actually, this will add a Refresh Token to the response.
+    '&access_type=offline').format(
     CLIENT_ID, 
     REDIRECT_URI, 
     SCOPE)
@@ -48,7 +52,7 @@ def index():
         if response.status_code != 200:
             return render_template('home.html')   
 
-        return response.text        
+        return str(credentials)
 
 # function triggered when user's click the login button
 @app.route('/login')
@@ -79,6 +83,7 @@ def oauth2callback():
             'client_id': CLIENT_ID,
             'client_secret': CLIENT_SECRET,
             'redirect_uri': REDIRECT_URI,
+            '&scope': '',
             'grant_type': 'authorization_code'} # grant type says which flow of oauth we want to use
 
     # sends a request to exchange code by access token to the api authorization server
