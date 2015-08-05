@@ -30,10 +30,13 @@ API_AUTHORIZATION_ENDPOINT = (
 
     # access_type=offline means you're requesting offline access to this resource.
     #  Actually, this will add a Refresh Token to the response.
+    #  It's also helpful to know that refresh tokens are generated ONLY ONCE.
     '&access_type=offline').format(
     CLIENT_ID, 
     REDIRECT_URI, 
     SCOPE)
+
+API_ACCESS_TOKEN_ENDPOINT = 'https://www.googleapis.com/oauth2/v3/token'
 
 @app.route('/')
 def index():
@@ -52,7 +55,7 @@ def index():
         if response.status_code != 200:
             return render_template('home.html')   
 
-        return str(credentials)
+        return render_template('loggedin.html', results=response.text, token=flask.session['credentials'])
 
 # function triggered when user's click the login button
 @app.route('/login')
@@ -87,10 +90,41 @@ def oauth2callback():
             'grant_type': 'authorization_code'} # grant type says which flow of oauth we want to use
 
     # sends a request to exchange code by access token to the api authorization server
-    response = requests.post('https://www.googleapis.com/oauth2/v3/token', data=data)
+    response = requests.post(API_ACCESS_TOKEN_ENDPOINT, data=data)
     
     flask.session['credentials'] = response.text
     return flask.redirect(flask.url_for('index'))
+
+@app.route('/logout')
+def logout():
+    del flask.session['credentials']
+    return flask.redirect(flask.url_for('index'))
+
+# this function is triggered when refresh token button is pressed
+#  what it does is simulating a expiration in the access token refreshing it
+#  against the api access token endpoint
+@app.route('/refresh')
+def refresh():
+
+    credentials = json.loads(flask.session['credentials'])
+
+    # notice the data sent to the endpoint differs here
+    data = {'client_secret': CLIENT_SECRET,
+            'grant_type': 'refresh_token', # it is request a Refresh Token flow
+            'refresh_token': credentials['refresh_token'], # and sending the refresh token (it never changes)
+            'client_id': CLIENT_ID}
+
+    response = requests.post(API_ACCESS_TOKEN_ENDPOINT, data=data)
+    new_credentials = json.loads(response.text)
+
+    # updating current credentials
+    credentials['access_token'] = new_credentials['access_token']
+    credentials['token_type'] = new_credentials['token_type']
+    credentials['expires_in'] = new_credentials['expires_in']
+    flask.session['credentials'] = json.dumps(credentials)
+
+    return flask.redirect(flask.url_for('index'))
+
 
 if __name__ == '__main__':
     app.secret_key = str(uuid.uuid4())

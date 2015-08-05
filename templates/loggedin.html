@@ -1,0 +1,16 @@
+<!doctype html>
+<title>Hello from Flask</title>
+
+<h1>Results</h1>
+
+<h1>Token: {{ token }}</h1>
+
+<form method="GET" action="logout">
+	<input type="submit" value="logout"/>
+</form>
+
+<form method="GET" action="refresh">
+	<input type="submit" value="refresh token"/>
+</form>
+
+<p>{{ results }}!</p>
