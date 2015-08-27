@@ -1,1 +1,8 @@
+# virtual env folder
 venv/
+
+# autoenv's directory based enviroment variables
+.env
+
+# pycharm ide
+.idea/
